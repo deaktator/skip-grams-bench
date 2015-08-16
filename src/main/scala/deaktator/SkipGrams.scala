@@ -8,6 +8,7 @@ import deaktator.util.SubSeqIterator
 import scala.collection.concurrent.TrieMap
 import scala.collection.parallel.mutable.ParArray
 import scala.{collection => sc}
+import scala.collection.{mutable => scm}
 
 object SkipGrams {
   val defaultSplitter = Pattern.compile("""\s+""")
@@ -28,7 +29,8 @@ object SkipGrams {
                  sep: String = "_",
                  splitString: String = """\s+"""):
   sc.Map[String, AtomicInteger] = {
-    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter else Pattern.compile(splitString)
+    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter
+                   else Pattern.compile(splitString)
     val tokens = splitter.split(str)
     val len = tokens.length
     val ind = (0 to len - n).par
@@ -59,7 +61,8 @@ object SkipGrams {
                  sep: String = "_",
                  splitString: String = """\s+"""):
   sc.Map[String, AtomicInteger]= {
-    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter else Pattern.compile(splitString)
+    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter
+                   else Pattern.compile(splitString)
     val tokens = splitter.split(str)
     val len = tokens.length
     val m = TrieMap.empty[String, AtomicInteger]
@@ -94,7 +97,7 @@ object SkipGrams {
                  splitString: String = """\s+"""):
   sc.Map[String, AtomicInteger] = {
     val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter
-    else Pattern.compile(splitString)
+                   else Pattern.compile(splitString)
     val tokens = splitter.split(str)
     val len = tokens.length
     val m = TrieMap.empty[String, AtomicInteger]
@@ -114,6 +117,71 @@ object SkipGrams {
     }
     m
   }
+
+  // single-threaded, mutable
+  def skipGrams4(str: String,
+                 n: Int,
+                 k: Int = 0,
+                 sep: String = "_",
+                 splitString: String = """\s+"""):
+  sc.Map[String, Int] = {
+    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter
+                   else Pattern.compile(splitString)
+    val tokens = splitter.split(str)
+    val len = tokens.length
+    val m = scm.Map.empty[String, Int]
+    var i = 0
+    while (i < len) {
+      val endExcl = math.min(len, i + n + k)
+      if (endExcl - i >= n) {
+        val range = i + 1 until math.min(len, i + n + k)
+        val it = SubSeqIterator(range, n - 1)
+        while(it.hasNext) {
+          val gram = new StringBuilder().append(tokens(i))
+          val j = it.next().iterator
+          while (j.hasNext) {
+            gram.append(sep).append(tokens(j.next()))
+          }
+          val g = gram.toString()
+          m.update(g, m.getOrElse(g, 0) + 1)
+        }
+      }
+      i += 1
+    }
+    m
+  }
+
+  // Parallel, mutable
+  def skipGrams5(str: String,
+                 n: Int,
+                 k: Int = 0,
+                 sep: String = "_",
+                 splitString: String = """\s+"""):
+  sc.Map[String, Int] = {
+    val splitter = if (splitString == defaultSplitter.pattern) defaultSplitter
+                   else Pattern.compile(splitString)
+    val tokens = splitter.split(str)
+    val len = tokens.length
+    val m = scm.Map.empty[String, Int]
+    var i = 0
+
+    while (i < len) {
+      val endExcl = math.min(len, i + n + k)
+      if (endExcl - i >= n) {
+        val range = i + 1 until math.min(len, i + n + k)
+        val it = SubSeqIterator(range, n - 1)
+        while(it.hasNext) {
+          val gram = it.next().foldLeft(new StringBuilder().append(tokens(i)))(
+                                       (s, j) => s.append(sep).append(tokens(j)))
+          val g = gram.toString()
+          m.update(g, m.getOrElse(g, 0) + 1)
+        }
+      }
+      i += 1
+    }
+    m
+  }
+
 
   // Parallel, mutable
   def bagOfWords1(str: String, splitString: String = """\s+"""):

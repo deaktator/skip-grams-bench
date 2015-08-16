@@ -43,7 +43,27 @@ class BagOfWordsBench {
     var i = 0
     val dummy = 0
     while (i < reps) {
-      SkipGrams.skipGrams2(pi, 1, splitString = split)
+      SkipGrams.skipGrams3(pi, 1, splitString = split)
+      i += 1
+    }
+    dummy
+  }
+
+  @Benchmark def skipGrams4(reps: Int): Int = {
+    var i = 0
+    val dummy = 0
+    while (i < reps) {
+      SkipGrams.skipGrams4(pi, 1, splitString = split)
+      i += 1
+    }
+    dummy
+  }
+
+  @Benchmark def skipGrams5(reps: Int): Int = {
+    var i = 0
+    val dummy = 0
+    while (i < reps) {
+      SkipGrams.skipGrams5(pi, 1, splitString = split)
       i += 1
     }
     dummy
@@ -73,7 +93,7 @@ class BagOfWordsBench {
     var i = 0
     val dummy = 0
     while (i < reps) {
-      SkipGrams.bagOfWords2(pi, splitString = split)
+      SkipGrams.bagOfWords3(pi, splitString = split)
       i += 1
     }
     dummy
