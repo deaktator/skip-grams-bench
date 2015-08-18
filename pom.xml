@@ -89,7 +89,8 @@
                                 <configuration>
                                     <classpathScope>test</classpathScope>
                                     <mainClass>com.google.caliper.runner.CaliperMain</mainClass>
-                                    <commandlineArgs>deaktator.BagOfWordsBench</commandlineArgs>
+                                    <!--<commandlineArgs>deaktator.BagOfWordsBench</commandlineArgs>-->
+                                    <commandlineArgs>deaktator.SkipGramsBench</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
